@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Copilot Overlay",
+  "version": "1.0",
+  "description": "Captures Copilot content and displays it in a separate window.",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["*://*/*"],
+  "action": {
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
