@@ -70,7 +70,7 @@
     // }
   }
 
-  //https://dev.to/elukuro/how-to-enable-communication-between-browser-windows-with-javascript-1675#:~:text=The%20postMessage%20API%20in%20JavaScript,documents%20originate%20from%20different%20sources.
+  // https://dev.to/elukuro/how-to-enable-communication-between-browser-windows-with-javascript-1675#:~:text=The%20postMessage%20API%20in%20JavaScript,documents%20originate%20from%20different%20sources.
   // https://blog.bitsrc.io/4-ways-to-communicate-across-browser-tabs-in-realtime-e4f5f6cbedca
 
   const setToFirstPrompt = () => {
@@ -142,7 +142,6 @@
     if (selectedPrompt) {
       selectedPrompt.prompt = event.detail.value
       updatePromptInLibrary(selectedPrompt)
-      // console.log(event.detail.value, selectedPrompt);
     }
   }
 
@@ -150,7 +149,6 @@
     if (prompt) {
       if (confirm('Are you sure you want to delete this prompt?')) {
         removePromptFromLibrary(prompt.id)
-        // console.log('delete', selectedPrompt);
         setToFirstPrompt()
       }
     }
@@ -177,11 +175,9 @@
     if (selectedContext && context.label !== lastSelectedContextLabel) {
       lastSelectedContextLabel = context.label
       await writeToClipboardAndToast('[' + context.label + ']')
-      console.log('written to clipboard')
     } else {
       lastSelectedContextLabel = context.label
       selectedContext = context
-      console.log('selectedContext', selectedContext)
     }
   }
 
@@ -189,7 +185,6 @@
     if (selectedContext) {
       selectedContext.content = event.detail.value
       updateContextInLibrary(selectedContext)
-      // console.log(event.detail.value, selectedContext);
     }
   }
 
@@ -197,7 +192,6 @@
     if (context) {
       if (confirm('Are you sure you want to delete this context?')) {
         removeContextFromLibrary(context.label)
-        // console.log('delete', selectedContext);
         selectedContext = undefined
       }
     }
@@ -207,7 +201,7 @@
   // upload and download stuff
   //
   const downloadProject = () => {
-    downloadJSON({ prompts: $prompts, contexts: $contexts })
+    downloadJSON({ prompts: $prompts, contexts: $contexts }, $project.title)
   }
 
   const uploadProject = async () => {
@@ -298,6 +292,7 @@
 
       <ion-card-content>
         <ion-textarea
+          placeholder="Enter the prompt here"
           auto-grow={true}
           value={selectedPrompt.prompt}
           on:ionInput={updatePromptPromptValue}
@@ -344,6 +339,7 @@
         <br />
         {#if selectedContext}
           <ion-textarea
+            placeholder="Enter the context here"
             auto-grow={true}
             value={selectedContext.content}
             on:ionInput={updateContextValue}
@@ -385,7 +381,10 @@
     width: 100%;
     text-align: left;
     border: 1px solid lightgray;
-    padding: 3px;
+    padding-left: 3px;
+    padding-right: 3px;
+    font-size: 80%;
+    vertical-align: top;
   }
 
   .action-button {

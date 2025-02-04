@@ -20,13 +20,16 @@ export const writeToClipboardAndToast = async (text: string) => {
   await showToast(text)
 }
 
-export const downloadJSON = (obj: object) => {
+export const downloadJSON = (obj: object, name: string) => {
+  // normalise the name to remove spaces and special characters
+  name = name.replace(/[^a-zA-Z0-9]/g, '_').toLocaleLowerCase()
+
   const dataStr =
     'data:text/json;charset=utf-8,' +
     encodeURIComponent(JSON.stringify(obj, null, 2))
   const downloadAnchorNode = document.createElement('a')
   downloadAnchorNode.setAttribute('href', dataStr)
-  downloadAnchorNode.setAttribute('download', 'download.json')
+  downloadAnchorNode.setAttribute('download', `${name}.json`)
   document.body.appendChild(downloadAnchorNode)
   downloadAnchorNode.click()
   downloadAnchorNode.remove()
