@@ -17,7 +17,7 @@ export const writeToClipboardAndToast = async (text: string) => {
     string: text,
   })
 
-  await showToast('Clipboard added: ' + text)
+  await showToast(text)
 }
 
 export const downloadJSON = (obj: object) => {

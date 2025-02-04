@@ -9,6 +9,7 @@
     prompts,
     type Prompt,
     contexts,
+    project,
     updatePromptInLibrary,
     removePromptFromLibrary,
     addContextToLibrary,
@@ -18,6 +19,7 @@
     completePromptWithContext,
     setPromptsInLibrary,
     setContextsInLibrary,
+    updateTitle,
   } from './prompts'
 
   import { lastUsedSettings, setLastUsedPromptId } from './userSettings'
@@ -29,6 +31,7 @@
     chatbox,
     cloudDownload,
     cloudUpload,
+    codeDownload,
   } from 'ionicons/icons'
   import { downloadJSON, uploadJSON, writeToClipboardAndToast } from './utils'
 
@@ -220,76 +223,105 @@
       setToFirstPrompt()
     }
   }
+
+  //
+  // Title
+  //
+  const changeTitle = () => {
+    const title = prompt('Enter the name for the project')
+    if (title && title.length > 4) {
+      updateTitle(title)
+    }
+  }
 </script>
 
 <ion-header>
   <ion-toolbar>
-    <ion-title>Prompt library</ion-title>
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <ion-title on:click={changeTitle}>{$project.title}</ion-title>
+
     <ion-buttons slot="end">
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <ion-button on:click={downloadProject}>
-        <ion-icon slot="icon-only" icon={cloudDownload}></ion-icon>
-      </ion-button>
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <ion-button on:click={uploadProject}>
-        <ion-icon slot="icon-only" icon={cloudUpload}></ion-icon>
-      </ion-button>
+      <div class="action-button-container">
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="action-button" on:click={downloadProject}>
+          <ion-icon icon={codeDownload}></ion-icon>
+        </div>
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="action-button" on:click={uploadProject}>
+          <ion-icon
+            style="transform: scaleY(-1);"
+            icon={codeDownload}
+          ></ion-icon>
+        </div>
+      </div>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <ion-list>
-    {#each $prompts as prompt}
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- svelte-ignore a11y-no-static-element-interactions -->
-      <ion-item on:click={() => selectPrompt(prompt)}>
-        <ion-label>
-          <h1>{prompt.title}</h1>
-          <p>{prompt.prompt}</p>
-        </ion-label>
-      </ion-item>
-    {/each}
-  </ion-list>
+  <ion-card>
+    <ion-card-content>
+      <ion-list>
+        {#each $prompts as prompt}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <ion-item on:click={() => selectPrompt(prompt)}>
+            <ion-label>
+              <h3>{prompt.title}</h3>
+              <p>{prompt.prompt}</p>
+            </ion-label>
+          </ion-item>
+        {/each}
+        <div class="action-button-container">
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div class="action-button" on:click={() => addPrompt()}>
+            <ion-icon icon={add}></ion-icon>
+          </div>
+        </div>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
 
   {#if selectedPrompt}
     <ion-card>
       <ion-card-header>
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <ion-card-title on:click={() => updatePromptTitle(selectedPrompt)}
-          >{selectedPrompt.title}</ion-card-title
-        >
+        <ion-card-title on:click={() => updatePromptTitle(selectedPrompt)}>
+          {selectedPrompt.title}
+        </ion-card-title>
       </ion-card-header>
 
       <ion-card-content>
         <ion-textarea
           auto-grow={true}
           value={selectedPrompt.prompt}
-          style="width: 100%"
           on:ionInput={updatePromptPromptValue}
         ></ion-textarea>
-      </ion-card-content>
-      <ion-fab vertical="top" horizontal="end">
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <ion-fab-button on:click={() => sendTextToContent(selectedPrompt)}>
-          <ion-icon icon={send}></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
 
-      <ion-fab vertical="bottom" horizontal="end">
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <ion-fab-button
-          color="danger"
-          on:click={() => deletePrompt(selectedPrompt)}
-        >
-          <ion-icon icon={trash}></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
+        <div class="action-button-container">
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div
+            class="action-button"
+            on:click={() => sendTextToContent(selectedPrompt)}
+          >
+            <ion-icon icon={send}></ion-icon>
+          </div>
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div
+            class="action-button"
+            on:click={() => deletePrompt(selectedPrompt)}
+          >
+            <ion-icon icon={trash}></ion-icon>
+          </div>
+        </div>
+      </ion-card-content>
     </ion-card>
 
     <ion-card>
@@ -304,47 +336,87 @@
           <ion-chip
             on:click={() => {
               selectContext(context)
-            }}>{context.label}</ion-chip
+            }}
           >
+            {context.label}
+          </ion-chip>
         {/each}
         <br />
         {#if selectedContext}
           <ion-textarea
             auto-grow={true}
             value={selectedContext.content}
-            style="width: 100%"
             on:ionInput={updateContextValue}
           ></ion-textarea>
-
-          <ion-fab vertical="bottom" horizontal="end">
+          <br />
+          <div class="action-button-container" style="">
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <ion-fab-button
-              color="danger"
+            <div class="action-button" on:click={() => addContext()}>
+              <ion-icon icon={add}></ion-icon>
+            </div>
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div
+              class="action-button"
               on:click={() => deleteContext(selectedContext)}
             >
               <ion-icon icon={trash}></ion-icon>
-            </ion-fab-button>
-          </ion-fab>
+            </div>
+          </div>
         {/if}
-        <br />
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <ion-button
-          expand="block"
-          on:click={() => {
-            addContext()
-          }}>Add context</ion-button
-        >
+        {#if !selectedContext}
+          <br />
+          <div style="float: right; display: flex; gap: 5px;">
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="action-button" on:click={() => addContext()}>
+              <ion-icon icon={add}></ion-icon>
+            </div>
+          </div>
+        {/if}
       </ion-card-content>
     </ion-card>
   {/if}
-
-  <ion-fab vertical="top" horizontal="end" slot="fixed">
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <ion-fab-button on:click={addPrompt}>
-      <ion-icon icon={add}></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
 </ion-content>
+
+<style>
+  ion-textarea {
+    width: 100%;
+    text-align: left;
+    border: 1px solid lightgray;
+    padding: 3px;
+  }
+
+  .action-button {
+    color: lightgray;
+    background: #090909;
+    border-radius: 8px;
+    padding: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .action-button-container {
+    float: right;
+    display: flex;
+    gap: 5px;
+  }
+
+  .action-button-container > * {
+    margin-right: 5px;
+  }
+
+  ion-chip {
+    transform: scale(0.8);
+  }
+
+  ion-card-title,
+  ion-title {
+    font-size: 80%;
+    text-align: left;
+  }
+</style>

@@ -7,5 +7,5 @@
   "svelteBracketNewLine": true,
   "svelteAllowShorthand": true,
   "svelteIndentScriptAndStyle": true,
-  "prettier.htmlWhitespaceSensitivity": "ignore"
+  "htmlWhitespaceSensitivity": "ignore"
 }

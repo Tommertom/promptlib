@@ -12,10 +12,13 @@ export interface Prompt {
   prompt: string
 }
 
+export interface Project {
+  title: string
+}
+
 export const prompts = writable<Prompt[]>([])
 export const contexts = writable<PromptContext[]>([])
-
-const projectName = 'default'
+export const project = writable<Project>({ title: '' })
 
 export const loadContextsAndPrompts = async () => {
   // load all prompts from indexedDB using localforage
@@ -39,6 +42,17 @@ export const loadContextsAndPrompts = async () => {
     contexts.set([])
   } else {
     contexts.set(contextsFromIndexedDB)
+  }
+
+  // load the project from indexedDB using localforage
+  const projectFromIndexedDB = await localforage.getItem<Project>('project')
+  console.log('loading projectFromIndexedDB', projectFromIndexedDB)
+
+  // if there is no project in indexedDB, set the project store to a default project
+  if (!projectFromIndexedDB) {
+    project.set({ title: 'Click to change project name' })
+  } else {
+    project.set(projectFromIndexedDB)
   }
 }
 
@@ -133,4 +147,15 @@ export const completePromptWithContext = (
   } while (hasFoundContext)
 
   return returnValue
+}
+
+//
+// Title
+//
+export const updateTitle = async (newTitle: string) => {
+  project.update((currentProject) => {
+    currentProject.title = newTitle
+    return currentProject
+  })
+  await localforage.setItem('project', get(project))
 }
