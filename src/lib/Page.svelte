@@ -236,7 +236,6 @@
     }
 
     if (title === '') {
-      console.log('resetting')
       updateTitle('New Project')
       setPromptsInLibrary([])
       setContextsInLibrary([])
