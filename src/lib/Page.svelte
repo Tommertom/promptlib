@@ -135,7 +135,7 @@
   //
   // Context methods
   //
-  const addContext = () => {
+  const addContext = async () => {
     const label = prompt('Enter the label for the context')
     const content = ''
 
@@ -144,17 +144,42 @@
         .replace(/[^a-zA-Z0-9]/g, '_')
         .toLocaleUpperCase()
       addContextToLibrary({ label: sanitizedLabel, content })
+
+      lastSelectedContextLabel = sanitizedLabel
+      await writeToClipboardAndToast('[' + sanitizedLabel + ']')
     }
   }
 
-  const selectContext = async (context: PromptContext) => {
-    console.log('state', lastSelectedContextLabel, context)
-    // if this is a first click, we just copy the label to clipboard
-    if (selectedContext && context.label !== lastSelectedContextLabel) {
-      lastSelectedContextLabel = context.label
+  //
+  // manual single and double click checker
+  //
+  let clickCount = 0
+  let singleClickTimer: NodeJS.Timeout | undefined = undefined
+
+  const selectContext = async (ev: any, context: PromptContext) => {
+    // only if something was selected, we do fancy checks
+    if (selectedContext) {
+      clickCount++
+      if (clickCount === 1) {
+        console.log('setting timeer')
+        singleClickTimer = setTimeout(async () => {
+          clickCount = 0
+          // singleclick
+          console.log('Single clcik', singleClickTimer)
+          await writeToClipboardAndToast('[' + context.label + ']')
+        }, 300)
+      } else if (clickCount === 2) {
+        console.log('Double click', singleClickTimer)
+        clearTimeout(singleClickTimer)
+        console.log('Double click2', singleClickTimer)
+        clickCount = 0
+        // doubleclick
+        selectedContext = context
+      }
+    }
+    // otherwise we just select the context
+    else {
       await writeToClipboardAndToast('[' + context.label + ']')
-    } else {
-      lastSelectedContextLabel = context.label
       selectedContext = context
     }
   }
@@ -204,16 +229,17 @@
   // Project
   //
   const changeTitle = () => {
+    const preamble = 'Click to change'
     const title = prompt(
       'Change the name for the project (or leave empty to start a new one)',
-      $projectInfo.title,
+      $projectInfo.title.includes(preamble) ? '' : $projectInfo.title,
     )
 
     if (title && title.length > 2) {
       setProjectTitle(title)
     }
 
-    if (title === '') {
+    if (title === '' && !$projectInfo.title.includes(preamble)) {
       startNewProject()
       setToFirstPrompt()
     }
@@ -393,11 +419,18 @@
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <ion-chip
-            on:click={() => {
-              selectContext(context)
+            class:chip-selected={context.label === selectedContext?.label}
+            on:click={(event) => {
+              selectContext(event, context)
             }}
           >
-            {context.label}
+            <span
+              style:font-weight={context.label === selectedContext?.label
+                ? 'bolder'
+                : 'normal'}
+            >
+              {context.label}
+            </span>
           </ion-chip>
         {/each}
         <br />
@@ -465,6 +498,10 @@
 
   ion-chip {
     transform: scale(0.8);
+  }
+
+  .chip-selected {
+    background: rgba(0, 0, 0, 0.2);
   }
 
   ion-card-title,
