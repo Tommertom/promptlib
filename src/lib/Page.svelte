@@ -201,19 +201,24 @@
   // upload and download stuff
   //
   const downloadProject = () => {
-    downloadJSON({ prompts: $prompts, contexts: $contexts }, $project.title)
+    downloadJSON(
+      { prompts: $prompts, contexts: $contexts, title: $project.title },
+      $project.title,
+    )
   }
 
   const uploadProject = async () => {
     const data = (await uploadJSON()) as {
       prompts: Prompt[]
       contexts: PromptContext[]
+      title: string
     }
 
     console.log('data', data)
     if (data.prompts && data.contexts) {
       setPromptsInLibrary(data.prompts)
       setContextsInLibrary(data.contexts)
+      updateTitle(data.title)
       setToFirstPrompt()
     }
   }
