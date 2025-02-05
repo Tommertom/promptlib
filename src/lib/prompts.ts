@@ -158,4 +158,6 @@ export const updateTitle = async (newTitle: string) => {
     return currentProject
   })
   await localforage.setItem('project', get(project))
+
+  // project.set({ ...get(project) })
 }

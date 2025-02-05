@@ -227,9 +227,20 @@
   // Title
   //
   const changeTitle = () => {
-    const title = prompt('Enter the name for the project')
-    if (title && title.length > 4) {
+    const title = prompt(
+      'Enter the name for the project (or leave empty to start a clean one)',
+    )
+
+    if (title && title.length > 2) {
       updateTitle(title)
+    }
+
+    if (title === '') {
+      console.log('resetting')
+      updateTitle('New Project')
+      setPromptsInLibrary([])
+      setContextsInLibrary([])
+      setToFirstPrompt()
     }
   }
 </script>
@@ -274,6 +285,15 @@
             </ion-label>
           </ion-item>
         {/each}
+        {#if $prompts.length === 0}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <ion-item on:click={() => addPrompt()}>
+            <ion-label>
+              <h3>Click here to enter your first prompt</h3>
+            </ion-label>
+          </ion-item>
+        {/if}
         <div class="action-button-container">
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -382,16 +402,6 @@
 </ion-content>
 
 <style>
-  ion-textarea {
-    width: 100%;
-    text-align: left;
-    border: 1px solid lightgray;
-    padding-left: 3px;
-    padding-right: 3px;
-    font-size: 80%;
-    vertical-align: top;
-  }
-
   .action-button {
     color: lightgray;
     background: #090909;
@@ -422,5 +432,15 @@
   ion-title {
     font-size: 80%;
     text-align: left;
+  }
+
+  ion-textarea {
+    width: 100%;
+    text-align: left;
+    border: 1px solid lightgray;
+    padding-left: 3px;
+    padding-right: 3px;
+    font-size: 90%;
+    vertical-align: top;
   }
 </style>
