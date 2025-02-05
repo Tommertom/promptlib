@@ -9,7 +9,7 @@
     prompts,
     type Prompt,
     contexts,
-    project,
+    projectInfo,
     updatePromptInLibrary,
     removePromptFromLibrary,
     addContextToLibrary,
@@ -19,21 +19,19 @@
     completePromptWithContext,
     setPromptsInLibrary,
     setContextsInLibrary,
-    updateTitle,
+    setProjectTitle,
+    projects_available,
+    type Project,
+    startNewProject,
+    selectProjectFromLibrary,
   } from './prompts'
 
   import { lastUsedSettings, setLastUsedPromptId } from './userSettings'
-  import {
-    add,
-    copy,
-    trash,
-    send,
-    chatbox,
-    cloudDownload,
-    cloudUpload,
-    codeDownload,
-  } from 'ionicons/icons'
+  import { add, trash, send, codeDownload, albumsOutline } from 'ionicons/icons'
   import { downloadJSON, uploadJSON, writeToClipboardAndToast } from './utils'
+  import { popoverController } from 'ionic-svelte'
+  import Counter from './Counter.svelte'
+  import { writable } from 'svelte/store'
 
   //
   // All init routines
@@ -51,31 +49,11 @@
     await writeToClipboardAndToast(
       completePromptWithContext(promptToPaste, $contexts),
     )
-
-    // if (chrome && chrome.tabs && chrome.tabs.query)
-    //   console.log('chrome.tabs.query', chrome.tabs)
-    // chrome.tabs.query(
-    //   { active: true, currentWindow: true },
-    //   function (tabs: any) {
-    //     chrome.tabs.sendMessage(tabs[0].id, {
-    //       action: 'paste_text',
-    //       text: textToPaste,
-    //     })
-    //   },
-    // )
-
-    // if (chrome && chrome.runtime && chrome.runtime.connect) {
-    //   const port = chrome.runtime.connect({ name: 'index' })
-    //   port.postMessage({ from: 'index', data: 'red' }) // Example: Change background color
-    // }
   }
-
-  // https://dev.to/elukuro/how-to-enable-communication-between-browser-windows-with-javascript-1675#:~:text=The%20postMessage%20API%20in%20JavaScript,documents%20originate%20from%20different%20sources.
-  // https://blog.bitsrc.io/4-ways-to-communicate-across-browser-tabs-in-realtime-e4f5f6cbedca
 
   const setToFirstPrompt = () => {
     if ($prompts.length > 0) {
-      selectedPrompt = $prompts[0]
+      selectPrompt($prompts[0])
     } else selectedPrompt = undefined
   }
   loadContextsAndPrompts().then(async () => {
@@ -124,7 +102,7 @@
       return
     }
 
-    const title = prompt('Enter the title of the prompt', promptToChange?.title)
+    const title = prompt('Enter the title of the prompt', promptToChange.title)
     if (title) {
       promptToChange.title = title
       updatePromptInLibrary(promptToChange)
@@ -202,8 +180,8 @@
   //
   const downloadProject = () => {
     downloadJSON(
-      { prompts: $prompts, contexts: $contexts, title: $project.title },
-      $project.title,
+      { prompts: $prompts, contexts: $contexts, title: $projectInfo.title },
+      $projectInfo.title,
     )
   }
 
@@ -214,44 +192,106 @@
       title: string
     }
 
-    console.log('data', data)
     if (data.prompts && data.contexts) {
       setPromptsInLibrary(data.prompts)
       setContextsInLibrary(data.contexts)
-      updateTitle(data.title)
+      setProjectTitle(data.title)
       setToFirstPrompt()
     }
   }
 
   //
-  // Title
+  // Project
   //
   const changeTitle = () => {
     const title = prompt(
-      'Enter the name for the project (or leave empty to start a clean one)',
+      'Change the name for the project (or leave empty to start a new one)',
+      $projectInfo.title,
     )
 
     if (title && title.length > 2) {
-      updateTitle(title)
+      setProjectTitle(title)
     }
 
     if (title === '') {
-      updateTitle('New Project')
-      setPromptsInLibrary([])
-      setContextsInLibrary([])
+      startNewProject()
       setToFirstPrompt()
     }
   }
+
+  const showProjectPopover = writable<boolean>(false)
+  const selectProject = async (project: Project) => {
+    selectProjectFromLibrary(project.projectInfo.id)
+    setToFirstPrompt()
+    showProjectPopover.set(false)
+  }
+
+  const deleteProject = (project: any) => {
+    if (confirm('Are you sure you want to delete this project?')) {
+      // remove the project from the list
+      const newProjects = $projects_available.filter(
+        (p) => p.projectInfo.title !== project.projectInfo.title,
+      )
+      projects_available.set(newProjects)
+
+      if (newProjects.length === 1) {
+        selectProject(newProjects[0])
+      }
+    }
+  }
 </script>
+
+<ion-popover
+  is-open={$showProjectPopover}
+  on:didDismiss={() => {
+    showProjectPopover.set(false)
+  }}
+>
+  <ion-list>
+    <ion-item>
+      <ion-label>Available projects</ion-label>
+    </ion-item>
+    {#each $projects_available as project}
+      <!-- svelte-ignore a11y-no-static-element-interactions -->
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <ion-item
+        on:click={() => {
+          selectProject(project)
+        }}
+      >
+        <ion-label>
+          {project.projectInfo.title}
+        </ion-label>
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="action-button" on:click={() => deleteProject(project)}>
+          <ion-icon icon={trash}></ion-icon>
+        </div>
+      </ion-item>
+    {/each}
+  </ion-list>
+</ion-popover>
 
 <ion-header>
   <ion-toolbar>
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <ion-title on:click={changeTitle}>{$project.title}</ion-title>
+    <ion-title on:click={changeTitle}>{$projectInfo.title}</ion-title>
 
     <ion-buttons slot="end">
       <div class="action-button-container">
+        {#if $projects_available.length > 1}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div
+            class="action-button"
+            on:click={() => {
+              showProjectPopover.set(true)
+            }}
+          >
+            <ion-icon icon={albumsOutline}></ion-icon>
+          </div>
+        {/if}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div class="action-button" on:click={downloadProject}>
@@ -437,8 +477,8 @@
     width: 100%;
     text-align: left;
     border: 1px solid lightgray;
-    padding-left: 3px;
-    padding-right: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
     font-size: 90%;
     vertical-align: top;
   }

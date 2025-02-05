@@ -12,13 +12,21 @@ export interface Prompt {
   prompt: string
 }
 
-export interface Project {
+export interface ProjectInfo {
   title: string
+  id: number
+}
+
+export interface Project {
+  projectInfo: ProjectInfo
+  prompts: Prompt[]
+  contexts: PromptContext[]
 }
 
 export const prompts = writable<Prompt[]>([])
 export const contexts = writable<PromptContext[]>([])
-export const project = writable<Project>({ title: '' })
+export const projectInfo = writable<ProjectInfo>({ title: '', id: Date.now() })
+export const projects_available = writable<Project[]>([])
 
 export const loadContextsAndPrompts = async () => {
   // load all prompts from indexedDB using localforage
@@ -45,15 +53,61 @@ export const loadContextsAndPrompts = async () => {
   }
 
   // load the project from indexedDB using localforage
-  const projectFromIndexedDB = await localforage.getItem<Project>('project')
+  const projectFromIndexedDB = await localforage.getItem<ProjectInfo>('project')
   console.log('loading projectFromIndexedDB', projectFromIndexedDB)
 
   // if there is no project in indexedDB, set the project store to a default project
   if (!projectFromIndexedDB) {
-    project.set({ title: 'Click to change project name' })
+    projectInfo.set({ title: 'Click to change project name', id: Date.now() })
   } else {
-    project.set(projectFromIndexedDB)
+    projectInfo.set(projectFromIndexedDB)
   }
+
+  // load all available projects from indexedDB using localforage
+  const projectsAvailableFromIndexedDB =
+    await localforage.getItem<Project[]>('projects_available')
+  console.log(
+    'loading projectsAvailableFromIndexedDB',
+    projectsAvailableFromIndexedDB,
+  )
+  if (!projectsAvailableFromIndexedDB) {
+    projects_available.set([])
+  } else {
+    projects_available.set(projectsAvailableFromIndexedDB)
+  }
+}
+
+const saveAllProjectData = async () => {
+  console.log(
+    'Data we are saving',
+    get(prompts),
+    get(contexts),
+    get(projectInfo),
+  )
+  // just brute force save all stuff
+  await localforage.setItem('prompts', get(prompts))
+  await localforage.setItem('contexts', get(contexts))
+  await localforage.setItem('project', get(projectInfo))
+
+  // upsert the project in the projects_available store
+  const currentProjects = get(projects_available)
+  const index = currentProjects.findIndex(
+    (p) => p.projectInfo.id === get(projectInfo).id,
+  )
+  const currentProject = {
+    projectInfo: get(projectInfo),
+    prompts: get(prompts),
+    contexts: get(contexts),
+  }
+  if (index === -1) {
+    projects_available.set([...currentProjects, currentProject])
+    console.log('Project not found in projects_available, adding it')
+  } else {
+    currentProjects[index] = { ...currentProject }
+    projects_available.set(currentProjects)
+  }
+
+  await localforage.setItem('projects_available', get(projects_available))
 }
 
 //
@@ -61,20 +115,20 @@ export const loadContextsAndPrompts = async () => {
 //
 export const setPromptsInLibrary = async (newPrompts: Prompt[]) => {
   prompts.set(newPrompts)
-  await localforage.setItem('prompts', get(prompts))
+  saveAllProjectData()
 }
 
 export const addPromptToLibrary = async (newPrompt: Prompt) => {
   const currentPrompts = get(prompts)
   const newPrompts = [...currentPrompts, newPrompt]
   prompts.set(newPrompts)
-  await localforage.setItem('prompts', get(prompts))
+  saveAllProjectData()
 }
 export const removePromptFromLibrary = async (promptId: number) => {
   const currentPrompts = get(prompts)
   const newPrompts = currentPrompts.filter((prompt) => prompt.id !== promptId)
   prompts.set(newPrompts)
-  await localforage.setItem('prompts', get(prompts))
+  saveAllProjectData()
 }
 
 export const updatePromptInLibrary = async (updatedPrompt: Prompt) => {
@@ -84,7 +138,7 @@ export const updatePromptInLibrary = async (updatedPrompt: Prompt) => {
   )
   currentPrompts[index] = updatedPrompt
   prompts.set(currentPrompts)
-  await localforage.setItem('prompts', get(prompts))
+  saveAllProjectData()
 }
 
 //
@@ -92,14 +146,14 @@ export const updatePromptInLibrary = async (updatedPrompt: Prompt) => {
 //
 export const setContextsInLibrary = async (newContexts: PromptContext[]) => {
   contexts.set(newContexts)
-  await localforage.setItem('contexts', get(contexts))
+  saveAllProjectData()
 }
 
 export const addContextToLibrary = async (newContext: PromptContext) => {
   const currentContexts = get(contexts)
   const newContexts = [...currentContexts, newContext]
   contexts.set(newContexts)
-  await localforage.setItem('contexts', get(contexts))
+  saveAllProjectData()
 }
 
 export const removeContextFromLibrary = async (contextLabel: string) => {
@@ -108,7 +162,7 @@ export const removeContextFromLibrary = async (contextLabel: string) => {
     (context) => context.label !== contextLabel,
   )
   contexts.set(newContexts)
-  await localforage.setItem('contexts', get(contexts))
+  saveAllProjectData()
 }
 
 export const updateContextInLibrary = async (updatedContext: PromptContext) => {
@@ -118,7 +172,7 @@ export const updateContextInLibrary = async (updatedContext: PromptContext) => {
   )
   currentContexts[index] = updatedContext
   contexts.set(currentContexts)
-  await localforage.setItem('contexts', get(contexts))
+  saveAllProjectData()
 }
 
 export const completePromptWithContext = (
@@ -152,12 +206,43 @@ export const completePromptWithContext = (
 //
 // Title
 //
-export const updateTitle = async (newTitle: string) => {
-  project.update((currentProject) => {
+export const setProjectTitle = async (newTitle: string) => {
+  projectInfo.update((currentProject) => {
+    console.log('Updating project title', currentProject)
     currentProject.title = newTitle
     return currentProject
   })
-  await localforage.setItem('project', get(project))
+  saveAllProjectData()
+}
 
-  // project.set({ ...get(project) })
+export const startNewProject = async () => {
+  // ensure a save of the current project
+  saveAllProjectData()
+
+  // set the project to a new project
+  projectInfo.set({ title: 'Click to change project name', id: Date.now() })
+  prompts.set([])
+  contexts.set([])
+
+  // save the new project
+  saveAllProjectData()
+}
+
+export const selectProjectFromLibrary = async (projectId: number) => {
+  console.log('selectProjectFromLibrary', projectId)
+  // ensure a save of the current project
+  saveAllProjectData()
+
+  // load the project from the library
+  const project = get(projects_available).find(
+    (p) => p.projectInfo.id === projectId,
+  )
+  if (project) {
+    projectInfo.set(project.projectInfo)
+    prompts.set(project.prompts)
+    contexts.set(project.contexts)
+  }
+
+  // save the new project
+  saveAllProjectData()
 }
