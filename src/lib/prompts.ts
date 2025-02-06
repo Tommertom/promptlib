@@ -77,6 +77,11 @@ export const loadContextsAndPrompts = async () => {
   }
 }
 
+export const setProjectsAvailable = async (projects: Project[]) => {
+  projects_available.set(projects)
+  await localforage.setItem('projects_available', projects)
+}
+
 const saveAllProjectData = async () => {
   console.log(
     'Data we are saving',

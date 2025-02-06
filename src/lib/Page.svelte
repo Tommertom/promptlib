@@ -24,6 +24,7 @@
     type Project,
     startNewProject,
     selectProjectFromLibrary,
+    setProjectsAvailable,
   } from './prompts'
 
   import { lastUsedSettings, setLastUsedPromptId } from './userSettings'
@@ -56,6 +57,7 @@
       selectPrompt($prompts[0])
     } else selectedPrompt = undefined
   }
+
   loadContextsAndPrompts().then(async () => {
     //set the first prompt as selected - if there is one
     setToFirstPrompt()
@@ -76,7 +78,6 @@
   //
   let selectedPrompt: Prompt | undefined = undefined
   let selectedContext: PromptContext | undefined = undefined
-  let lastSelectedContextLabel = ''
 
   //
   // methods
@@ -144,8 +145,6 @@
         .replace(/[^a-zA-Z0-9]/g, '_')
         .toLocaleUpperCase()
       addContextToLibrary({ label: sanitizedLabel, content })
-
-      lastSelectedContextLabel = sanitizedLabel
       await writeToClipboardAndToast('[' + sanitizedLabel + ']')
     }
   }
@@ -169,9 +168,8 @@
           await writeToClipboardAndToast('[' + context.label + ']')
         }, 300)
       } else if (clickCount === 2) {
-        console.log('Double click', singleClickTimer)
+        // doubleclick
         clearTimeout(singleClickTimer)
-        console.log('Double click2', singleClickTimer)
         clickCount = 0
         // doubleclick
         selectedContext = context
@@ -205,7 +203,12 @@
   //
   const downloadProject = () => {
     downloadJSON(
-      { prompts: $prompts, contexts: $contexts, title: $projectInfo.title },
+      {
+        prompts: $prompts,
+        contexts: $contexts,
+        title: $projectInfo.title,
+        projects_available: $projects_available,
+      },
       $projectInfo.title,
     )
   }
@@ -215,13 +218,26 @@
       prompts: Prompt[]
       contexts: PromptContext[]
       title: string
+      projects_available: Project[]
     }
 
     if (data.prompts && data.contexts) {
       setPromptsInLibrary(data.prompts)
       setContextsInLibrary(data.contexts)
       setProjectTitle(data.title)
+      setProjectsAvailable(data.projects_available)
       setToFirstPrompt()
+    }
+  }
+
+  const downloadContexts = () => {
+    downloadJSON($contexts, 'contexts')
+  }
+
+  const uploadContexts = async () => {
+    const data = (await uploadJSON()) as PromptContext[]
+    if (data) {
+      setContextsInLibrary(data)
     }
   }
 
@@ -411,10 +427,36 @@
 
     <ion-card>
       <ion-card-header>
-        <ion-card-title>Contexts</ion-card-title>
+        <ion-card-title>
+          Contexts
+          <div class="action-button-container">
+            {#if $contexts.length > 0}
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <div class="action-button" on:click={downloadContexts}>
+                <ion-icon icon={codeDownload}></ion-icon>
+              </div>
+            {/if}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="action-button" on:click={uploadContexts}>
+              <ion-icon
+                style="transform: scaleY(-1);"
+                icon={codeDownload}
+              ></ion-icon>
+            </div>
+          </div>
+        </ion-card-title>
       </ion-card-header>
 
       <ion-card-content>
+        {#if $contexts.length === 0}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <ion-item on:click={() => addContext()}>
+            <ion-label>Click to add a new one.</ion-label>
+          </ion-item>
+        {/if}
         {#each $contexts as context}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -441,7 +483,7 @@
             value={selectedContext.content}
             on:ionInput={updateContextValue}
           ></ion-textarea>
-          <br />
+
           <div class="action-button-container" style="">
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -459,7 +501,6 @@
           </div>
         {/if}
         {#if !selectedContext}
-          <br />
           <div style="float: right; display: flex; gap: 5px;">
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -518,5 +559,6 @@
     padding-right: 10px;
     font-size: 90%;
     vertical-align: top;
+    margin-bottom: 10px;
   }
 </style>
