@@ -41,11 +41,6 @@
     if (!promptToPaste) {
       return
     }
-    console.log(
-      'Sending text to content',
-      promptToPaste,
-      completePromptWithContext(promptToPaste, $contexts),
-    )
 
     await writeToClipboardAndToast(
       completePromptWithContext(promptToPaste, $contexts),
@@ -160,11 +155,9 @@
     if (selectedContext) {
       clickCount++
       if (clickCount === 1) {
-        console.log('setting timeer')
         singleClickTimer = setTimeout(async () => {
           clickCount = 0
           // singleclick
-          console.log('Single clcik', singleClickTimer)
           await writeToClipboardAndToast('[' + context.label + ']')
         }, 300)
       } else if (clickCount === 2) {
@@ -238,6 +231,17 @@
     const data = (await uploadJSON()) as PromptContext[]
     if (data) {
       setContextsInLibrary(data)
+    }
+  }
+
+  const downloadPrompts = () => {
+    downloadJSON($prompts, 'prompts')
+  }
+
+  const uploadPrompts = async () => {
+    const data = (await uploadJSON()) as Prompt[]
+    if (data) {
+      setPromptsInLibrary(data)
     }
   }
 
@@ -355,6 +359,23 @@
 <ion-content class="ion-padding">
   <ion-card>
     <ion-card-content>
+      <div class="action-button-container">
+        {#if $contexts.length > 0}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div class="action-button" on:click={downloadPrompts}>
+            <ion-icon icon={codeDownload}></ion-icon>
+          </div>
+        {/if}
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="action-button" on:click={uploadPrompts}>
+          <ion-icon
+            style="transform: scaleY(-1);"
+            icon={codeDownload}
+          ></ion-icon>
+        </div>
+      </div>
       <ion-list>
         {#each $prompts as prompt}
           <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -375,14 +396,14 @@
             </ion-label>
           </ion-item>
         {/if}
-        <div class="action-button-container">
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <div class="action-button" on:click={() => addPrompt()}>
-            <ion-icon icon={add}></ion-icon>
-          </div>
-        </div>
       </ion-list>
+      <div class="action-button-container">
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="action-button" on:click={() => addPrompt()}>
+          <ion-icon icon={add}></ion-icon>
+        </div>
+      </div>
     </ion-card-content>
   </ion-card>
 
