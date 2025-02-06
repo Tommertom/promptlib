@@ -4,7 +4,7 @@
   import { setupIonicBase } from 'ionic-svelte'
 
   // @ts-ignore
-  import { useRegisterSW } from 'virtual:pwa-register/svelte'
+  import { registerSW } from 'virtual:pwa-register/svelte'
 
   /* Call Ionic's setup routine. */
   setupIonicBase()
@@ -15,23 +15,16 @@
   /* Theme variables */
   import './theme/variables.css'
 
-  const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
-    onRegistered(swr: ServiceWorkerRegistration) {
-      console.log(`SW registered: ${swr}`)
-    },
-    onRegisterError(error: any) {
-      console.log('SW registration error', error)
+  const intervalMS = 60 * 60 * 1000
+
+  const updateSW = registerSW({
+    onRegistered(r: ServiceWorkerRegistration) {
+      r &&
+        setInterval(() => {
+          r.update()
+        }, intervalMS)
     },
   })
-
-  needRefresh.subscribe(() => {
-    alert('New version available! Will refresh in a few seconds')
-    setTimeout(() => {
-      updateServiceWorker(true)
-      window.location.reload()
-    }, 3000)
-  })
-
   /*
 		This part - import 'ionic-svelte/components/all'; - loads all components at once. Importing this way adds 80 components and >800kb (uncompressed) to your bundle.
 

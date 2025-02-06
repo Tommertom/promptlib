@@ -153,7 +153,7 @@
   // manual single and double click checker
   //
   let clickCount = 0
-  let singleClickTimer: NodeJS.Timeout | undefined = undefined
+  let singleClickTimer: ReturnType<typeof setTimeout> | undefined = undefined
 
   const selectContext = async (ev: any, context: PromptContext) => {
     // only if something was selected, we do fancy checks
