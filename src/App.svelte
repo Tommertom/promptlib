@@ -12,11 +12,6 @@
   /* Theme variables */
   import './theme/variables.css'
 
-  //@ts-ignore
-  import { registerSW } from 'virtual:pwa-register'
-
-  registerSW({ immediate: true })
-
   /*
 		This part - import 'ionic-svelte/components/all'; - loads all components at once. Importing this way adds 80 components and >800kb (uncompressed) to your bundle.
 
