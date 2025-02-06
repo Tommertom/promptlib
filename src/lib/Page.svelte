@@ -454,7 +454,7 @@
           <!-- svelte-ignore a11y_click_events_have_key_events -->
           <!-- svelte-ignore a11y_no_static_element_interactions -->
           <ion-item on:click={() => addContext()}>
-            <ion-label>Click to add a new one.</ion-label>
+            <ion-label>Click to add one</ion-label>
           </ion-item>
         {/if}
         {#each $contexts as context}
