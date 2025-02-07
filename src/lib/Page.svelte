@@ -242,6 +242,7 @@
     const data = (await uploadJSON()) as Prompt[]
     if (data) {
       setPromptsInLibrary(data)
+      setToFirstPrompt()
     }
   }
 
@@ -359,23 +360,6 @@
 <ion-content class="ion-padding">
   <ion-card>
     <ion-card-content>
-      <div class="action-button-container">
-        {#if $contexts.length > 0}
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <div class="action-button" on:click={downloadPrompts}>
-            <ion-icon icon={codeDownload}></ion-icon>
-          </div>
-        {/if}
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <div class="action-button" on:click={uploadPrompts}>
-          <ion-icon
-            style="transform: scaleY(-1);"
-            icon={codeDownload}
-          ></ion-icon>
-        </div>
-      </div>
       <ion-list>
         {#each $prompts as prompt}
           <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -442,32 +426,28 @@
           >
             <ion-icon icon={trash}></ion-icon>
           </div>
+          {#if $prompts.length > 0}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="action-button" on:click={downloadPrompts}>
+              <ion-icon icon={codeDownload}></ion-icon>
+            </div>
+          {/if}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div class="action-button" on:click={uploadPrompts}>
+            <ion-icon
+              style="transform: scaleY(-1);"
+              icon={codeDownload}
+            ></ion-icon>
+          </div>
         </div>
       </ion-card-content>
     </ion-card>
 
     <ion-card>
       <ion-card-header>
-        <ion-card-title>
-          Contexts
-          <div class="action-button-container">
-            {#if $contexts.length > 0}
-              <!-- svelte-ignore a11y-no-static-element-interactions -->
-              <!-- svelte-ignore a11y-click-events-have-key-events -->
-              <div class="action-button" on:click={downloadContexts}>
-                <ion-icon icon={codeDownload}></ion-icon>
-              </div>
-            {/if}
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div class="action-button" on:click={uploadContexts}>
-              <ion-icon
-                style="transform: scaleY(-1);"
-                icon={codeDownload}
-              ></ion-icon>
-            </div>
-          </div>
-        </ion-card-title>
+        <ion-card-title>Contexts</ion-card-title>
       </ion-card-header>
 
       <ion-card-content>
@@ -519,14 +499,37 @@
             >
               <ion-icon icon={trash}></ion-icon>
             </div>
+            {#if $contexts.length > 0}
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <div class="action-button" on:click={downloadContexts}>
+                <ion-icon icon={codeDownload}></ion-icon>
+              </div>
+            {/if}
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="action-button" on:click={uploadContexts}>
+              <ion-icon
+                style="transform: scaleY(-1);"
+                icon={codeDownload}
+              ></ion-icon>
+            </div>
           </div>
         {/if}
         {#if !selectedContext}
-          <div style="float: right; display: flex; gap: 5px;">
+          <div class="action-button-container">
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div class="action-button" on:click={() => addContext()}>
               <ion-icon icon={add}></ion-icon>
+            </div>
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="action-button" on:click={uploadContexts}>
+              <ion-icon
+                style="transform: scaleY(-1);"
+                icon={codeDownload}
+              ></ion-icon>
             </div>
           </div>
         {/if}
