@@ -26,11 +26,25 @@
     selectProjectFromLibrary,
     setProjectsAvailable,
     deleteProjectFromLibrary,
+    updateContextLabelInProject,
   } from './prompts'
 
   import { lastUsedSettings, setLastUsedPromptId } from './userSettings'
-  import { add, trash, send, codeDownload, albumsOutline } from 'ionicons/icons'
-  import { downloadJSON, uploadJSON, writeToClipboardAndToast } from './utils'
+  import {
+    add,
+    trash,
+    send,
+    codeDownload,
+    albumsOutline,
+    createOutline,
+  } from 'ionicons/icons'
+  import {
+    downloadJSON,
+    sanitiseLabel,
+    stringSlim,
+    uploadJSON,
+    writeToClipboardAndToast,
+  } from './utils'
   import { popoverController } from 'ionic-svelte'
   import Counter from './Counter.svelte'
   import { writable } from 'svelte/store'
@@ -76,6 +90,8 @@
   //
   let selectedPrompt: Prompt | undefined = undefined
   let selectedContext: PromptContext | undefined = undefined
+  let showToast = writable<boolean>(false)
+  let toastMessage = writable<string>('')
 
   //
   // methods
@@ -111,6 +127,10 @@
   }
 
   const selectPrompt = (prompt: Prompt) => {
+    if (selectedPrompt && selectedPrompt.id === prompt.id) {
+      sendTextToContent(prompt)
+      return
+    }
     selectedPrompt = prompt
     setLastUsedPromptId(prompt.id)
   }
@@ -136,23 +156,18 @@
   //
   const addContext = async () => {
     const label = prompt('Enter the label for the context')
-    const content = ''
-
-    if (label) {
-      const sanitizedLabel = label
-        .replace(/[^a-zA-Z0-9]/g, '_')
-        .toLocaleUpperCase()
-      addContextToLibrary({ label: sanitizedLabel, content })
+    const sanitizedLabel = sanitiseLabel(label)
+    if (sanitizedLabel.length > 0) {
+      selectedContext = addContextToLibrary({
+        label: sanitizedLabel,
+        content: '',
+      })
       await writeToClipboardAndToast('[' + sanitizedLabel + ']')
     }
   }
 
-  //
-  // manual single and double click checker
-  //
   let clickCount = 0
   let singleClickTimer: ReturnType<typeof setTimeout> | undefined = undefined
-
   const selectContext = async (ev: any, context: PromptContext) => {
     // only if something was selected, we do fancy checks
     if (selectedContext) {
@@ -187,9 +202,24 @@
 
   const deleteContext = (context: PromptContext | undefined) => {
     if (context) {
-      if (confirm('Are you sure you want to delete this context?')) {
+      if (
+        confirm(
+          `Are you sure you want to delete this context? (${context.label})`,
+        )
+      ) {
         removeContextFromLibrary(context.label)
         selectedContext = undefined
+      }
+    }
+  }
+
+  const updateContextLabel = (context: PromptContext | undefined) => {
+    if (context) {
+      const label = prompt('Enter the new label for the context', context.label)
+
+      const sanitizedLabel = sanitiseLabel(label)
+      if (sanitizedLabel.length > 0) {
+        updateContextLabelInProject(context, sanitizedLabel)
       }
     }
   }
@@ -260,7 +290,7 @@
       $projectInfo.title.includes(preamble) ? '' : $projectInfo.title,
     )
 
-    if (title && (title === 'rrrefresh' || title === 'Rrrefresh')) {
+    if (title && (title === 'rrefresh' || title === 'Rrefresh')) {
       window.location.reload()
       return
     }
@@ -283,6 +313,7 @@
     selectProjectFromLibrary(project.projectInfo.id)
     selectedContext = undefined
     setToFirstPrompt()
+
     showProjectPopover.set(false)
   }
 
@@ -347,7 +378,11 @@
           <div
             class="action-button"
             on:click={() => {
-              showProjectPopover.set(true)
+              try {
+                showProjectPopover.set(true)
+              } catch (e) {
+                console.log('Error in popover3', e)
+              }
             }}
           >
             <ion-icon icon={albumsOutline}></ion-icon>
@@ -381,7 +416,9 @@
           <ion-item on:click={() => selectPrompt(prompt)}>
             <ion-label>
               <h3>{prompt.title}</h3>
-              <p>{prompt.prompt}</p>
+              <p>
+                {stringSlim(prompt.prompt, 128)}
+              </p>
             </ion-label>
           </ion-item>
         {/each}
@@ -510,6 +547,14 @@
               on:click={() => deleteContext(selectedContext)}
             >
               <ion-icon icon={trash}></ion-icon>
+            </div>
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div
+              class="action-button"
+              on:click={() => updateContextLabel(selectedContext)}
+            >
+              <ion-icon icon={createOutline}></ion-icon>
             </div>
             {#if $contexts.length > 0}
               <!-- svelte-ignore a11y-no-static-element-interactions -->

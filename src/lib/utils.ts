@@ -1,15 +1,16 @@
 import { Clipboard } from '@capacitor/clipboard'
-import { toastController } from 'ionic-svelte'
 
 const showToast = async (text: string) => {
-  const toast = await toastController.create({
-    // color: 'danger',
-    duration: 1000,
-    message: text,
-    // showCloseButton: true,
-  })
+  const toast = document.createElement('ion-toast')
+  toast.message = text
+  toast.duration = 2000
+  toast.isOpen = true
 
-  toast.present()
+  document.body.appendChild(toast)
+
+  toast.onDidDismiss().then(() => {
+    // leaking dom elements..
+  })
 }
 
 export const writeToClipboardAndToast = async (text: string) => {
@@ -17,7 +18,7 @@ export const writeToClipboardAndToast = async (text: string) => {
     string: text,
   })
 
-  await showToast(text)
+  await showToast(stringSlim(text, 400))
 }
 
 export const downloadJSON = (obj: object, name: string) => {
@@ -62,4 +63,15 @@ export const uploadJSON = (): Promise<object> => {
     }
     input.click()
   })
+}
+
+export const sanitiseLabel = (label: string | null) => {
+  return (label ? label : '').replace(/[^a-zA-Z0-9]/g, '_').toLocaleUpperCase()
+}
+
+export const stringSlim = (str: string, maxLength: number) => {
+  if (str.length > maxLength) {
+    return str.substring(0, maxLength) + '...'
+  }
+  return str
 }

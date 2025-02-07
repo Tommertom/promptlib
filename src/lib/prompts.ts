@@ -147,11 +147,12 @@ export const setContextsInLibrary = async (newContexts: PromptContext[]) => {
   saveAllProjectData()
 }
 
-export const addContextToLibrary = async (newContext: PromptContext) => {
+export const addContextToLibrary = (newContext: PromptContext) => {
   const currentContexts = get(contexts)
   const newContexts = [...currentContexts, newContext]
   contexts.set(newContexts)
   saveAllProjectData()
+  return newContext
 }
 
 export const removeContextFromLibrary = async (contextLabel: string) => {
@@ -173,6 +174,27 @@ export const updateContextInLibrary = async (updatedContext: PromptContext) => {
   saveAllProjectData()
 }
 
+export const updateContextLabelInProject = (
+  context: PromptContext,
+  newLabel: string,
+) => {
+  const currentContexts = get(contexts)
+  const index = currentContexts.findIndex((c) => c.label === context.label)
+
+  // Check if the sanitizedLabel is already being used
+  const isLabelUsed = currentContexts.some((c) => c.label === newLabel)
+  if (isLabelUsed) {
+    return
+  }
+
+  currentContexts[index].label = newLabel
+  contexts.set(currentContexts)
+  saveAllProjectData()
+}
+
+//
+//
+//
 export const completePromptWithContext = (
   prompt: Prompt,
   contexts: PromptContext[],
