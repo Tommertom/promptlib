@@ -242,6 +242,8 @@ export const selectProjectFromLibrary = async (projectId: number) => {
   const project = get(projects_available).find(
     (p) => p.projectInfo.id === projectId,
   )
+  console.log('Found project', project, get(projects_available))
+
   if (project) {
     projectInfo.set(project.projectInfo)
     prompts.set(project.prompts)

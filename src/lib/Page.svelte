@@ -256,7 +256,7 @@
       $projectInfo.title.includes(preamble) ? '' : $projectInfo.title,
     )
 
-    if (title && title === 'rrrefresh') {
+    if (title && (title === 'rrrefresh' || title === 'Rrrefresh')) {
       window.location.reload()
       return
     }
@@ -274,6 +274,7 @@
   const showProjectPopover = writable<boolean>(false)
   const selectProject = async (project: Project) => {
     selectProjectFromLibrary(project.projectInfo.id)
+    selectedContext = undefined
     setToFirstPrompt()
     showProjectPopover.set(false)
   }
@@ -392,6 +393,21 @@
         <div class="action-button" on:click={() => addPrompt()}>
           <ion-icon icon={add}></ion-icon>
         </div>
+        {#if $prompts.length > 0}
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div class="action-button" on:click={downloadPrompts}>
+            <ion-icon icon={codeDownload}></ion-icon>
+          </div>
+        {/if}
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <div class="action-button" on:click={uploadPrompts}>
+          <ion-icon
+            style="transform: scaleY(-1);"
+            icon={codeDownload}
+          ></ion-icon>
+        </div>
       </div>
     </ion-card-content>
   </ion-card>
@@ -430,21 +446,6 @@
             on:click={() => deletePrompt(selectedPrompt)}
           >
             <ion-icon icon={trash}></ion-icon>
-          </div>
-          {#if $prompts.length > 0}
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <div class="action-button" on:click={downloadPrompts}>
-              <ion-icon icon={codeDownload}></ion-icon>
-            </div>
-          {/if}
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <div class="action-button" on:click={uploadPrompts}>
-            <ion-icon
-              style="transform: scaleY(-1);"
-              icon={codeDownload}
-            ></ion-icon>
           </div>
         </div>
       </ion-card-content>
