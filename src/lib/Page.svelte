@@ -252,7 +252,7 @@
   const changeTitle = () => {
     const preamble = 'Click to change'
     const title = prompt(
-      'Change the name for the project (or leave empty to start a new one)',
+      'Change the name for the project \n(or leave empty to start a new one)',
       $projectInfo.title.includes(preamble) ? '' : $projectInfo.title,
     )
 
