@@ -6,8 +6,31 @@
   /* Call Ionic's setup routine. */
   setupIonicBase()
 
-  /* Import all components. (You can selectively import components instead; see below.) */
-  import 'ionic-svelte/components/all'
+  /* Import all  relevant components. (You can selectively import components instead; see below.) */
+  import 'ionic-svelte/components/ion-app'
+  import 'ionic-svelte/components/ion-backdrop'
+  import 'ionic-svelte/components/ion-badge'
+  import 'ionic-svelte/components/ion-card'
+  import 'ionic-svelte/components/ion-card-content'
+  import 'ionic-svelte/components/ion-card-header'
+  import 'ionic-svelte/components/ion-card-subtitle'
+  import 'ionic-svelte/components/ion-card-title'
+  import 'ionic-svelte/components/ion-chip'
+  import 'ionic-svelte/components/ion-content'
+  import 'ionic-svelte/components/ion-footer'
+  import 'ionic-svelte/components/ion-header'
+  import 'ionic-svelte/components/ion-item'
+  import 'ionic-svelte/components/ion-label'
+  import 'ionic-svelte/components/ion-list'
+  import 'ionic-svelte/components/ion-list-header'
+  import 'ionic-svelte/components/ion-popover'
+  import 'ionic-svelte/components/ion-ripple-effect'
+
+  import 'ionic-svelte/components/ion-text'
+  import 'ionic-svelte/components/ion-textarea'
+  import 'ionic-svelte/components/ion-title'
+  import 'ionic-svelte/components/ion-toast'
+  import 'ionic-svelte/components/ion-toolbar'
 
   /* Theme variables */
   import './theme/variables.css'
