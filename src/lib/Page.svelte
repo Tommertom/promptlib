@@ -256,6 +256,11 @@
       $projectInfo.title.includes(preamble) ? '' : $projectInfo.title,
     )
 
+    if (title && title === 'rrrefresh') {
+      window.location.reload()
+      return
+    }
+
     if (title && title.length > 2) {
       setProjectTitle(title)
     }
