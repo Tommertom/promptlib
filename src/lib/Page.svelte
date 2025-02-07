@@ -286,8 +286,12 @@
     showProjectPopover.set(false)
   }
 
-  const deleteProject = (project: any) => {
-    if (confirm('Are you sure you want to delete this project?')) {
+  const deleteProject = (project: Project) => {
+    if (
+      confirm(
+        `Are you sure you want to delete this project? (${project.projectInfo.title})`,
+      )
+    ) {
       // remove the project from the list
       deleteProjectFromLibrary(project.projectInfo.id)
 
@@ -459,7 +463,6 @@
       <ion-card-header>
         <ion-card-title>Contexts</ion-card-title>
       </ion-card-header>
-
       <ion-card-content>
         {#if $contexts.length === 0}
           <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -494,7 +497,6 @@
             value={selectedContext.content}
             on:ionInput={updateContextValue}
           ></ion-textarea>
-
           <div class="action-button-container" style="">
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -541,6 +543,13 @@
                 icon={codeDownload}
               ></ion-icon>
             </div>
+            {#if $contexts.length > 0}
+              <!-- svelte-ignore a11y-no-static-element-interactions -->
+              <!-- svelte-ignore a11y-click-events-have-key-events -->
+              <div class="action-button" on:click={downloadContexts}>
+                <ion-icon icon={codeDownload}></ion-icon>
+              </div>
+            {/if}
           </div>
         {/if}
       </ion-card-content>
@@ -553,11 +562,12 @@
 <style>
   .footer {
     position: fixed;
-    bottom: 0;
+    bottom: 5px;
     width: 100%;
     text-align: right;
     color: #3b3b3b;
     font-size: 70%;
+    padding-right: 15px;
   }
 
   .action-button {
