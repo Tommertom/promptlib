@@ -25,6 +25,7 @@
     startNewProject,
     selectProjectFromLibrary,
     setProjectsAvailable,
+    deleteProjectFromLibrary,
   } from './prompts'
 
   import { lastUsedSettings, setLastUsedPromptId } from './userSettings'
@@ -33,6 +34,8 @@
   import { popoverController } from 'ionic-svelte'
   import Counter from './Counter.svelte'
   import { writable } from 'svelte/store'
+
+  import { buildTime } from '../buildTime'
 
   //
   // All init routines
@@ -231,6 +234,7 @@
     const data = (await uploadJSON()) as PromptContext[]
     if (data) {
       setContextsInLibrary(data)
+      selectedContext = undefined
     }
   }
 
@@ -271,6 +275,9 @@
     }
   }
 
+  //
+  // Project - Popover stuff
+  //
   const showProjectPopover = writable<boolean>(false)
   const selectProject = async (project: Project) => {
     selectProjectFromLibrary(project.projectInfo.id)
@@ -282,13 +289,10 @@
   const deleteProject = (project: any) => {
     if (confirm('Are you sure you want to delete this project?')) {
       // remove the project from the list
-      const newProjects = $projects_available.filter(
-        (p) => p.projectInfo.title !== project.projectInfo.title,
-      )
-      projects_available.set(newProjects)
+      deleteProjectFromLibrary(project.projectInfo.id)
 
-      if (newProjects.length === 1) {
-        selectProject(newProjects[0])
+      if ($projects_available.length === 1) {
+        selectProject($projects_available[0])
       }
     }
   }
@@ -544,7 +548,18 @@
   {/if}
 </ion-content>
 
+<div class="footer">{buildTime}</div>
+
 <style>
+  .footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: right;
+    color: #3b3b3b;
+    font-size: 70%;
+  }
+
   .action-button {
     color: lightgray;
     background: #090909;

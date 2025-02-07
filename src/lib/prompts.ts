@@ -31,7 +31,6 @@ export const projects_available = writable<Project[]>([])
 export const loadContextsAndPrompts = async () => {
   // load all prompts from indexedDB using localforage
   const promptsFromIndexedDB = await localforage.getItem<Prompt[]>('prompts')
-  console.log('loading promptsFromIndexedDB', promptsFromIndexedDB)
 
   // if there are no prompts in indexedDB, set the prompts store to an empty array
   if (!promptsFromIndexedDB) {
@@ -83,12 +82,6 @@ export const setProjectsAvailable = async (projects: Project[]) => {
 }
 
 const saveAllProjectData = async () => {
-  console.log(
-    'Data we are saving',
-    get(prompts),
-    get(contexts),
-    get(projectInfo),
-  )
   // just brute force save all stuff
   await localforage.setItem('prompts', get(prompts))
   await localforage.setItem('contexts', get(contexts))
@@ -209,7 +202,7 @@ export const completePromptWithContext = (
 }
 
 //
-// Title
+// Project
 //
 export const setProjectTitle = async (newTitle: string) => {
   projectInfo.update((currentProject) => {
@@ -251,5 +244,14 @@ export const selectProjectFromLibrary = async (projectId: number) => {
   }
 
   // save the new project
+  saveAllProjectData()
+}
+
+export const deleteProjectFromLibrary = async (projectId: number) => {
+  const currentProjects = get(projects_available)
+  const newProjects = currentProjects.filter(
+    (project) => project.projectInfo.id !== projectId,
+  )
+  projects_available.set(newProjects)
   saveAllProjectData()
 }
