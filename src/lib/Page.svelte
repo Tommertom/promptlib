@@ -3,6 +3,7 @@
 </script>
 
 <script lang="ts">
+  import { Clipboard } from '@capacitor/clipboard'
   import {
     loadContextsAndPrompts,
     addPromptToLibrary,
@@ -27,6 +28,7 @@
     setProjectsAvailable,
     deleteProjectFromLibrary,
     updateContextLabelInProject,
+    copyProject,
   } from './prompts'
 
   import { lastUsedSettings, setLastUsedPromptId } from './userSettings'
@@ -37,19 +39,23 @@
     codeDownload,
     albumsOutline,
     createOutline,
+    copyOutline,
+    colorWandOutline,
   } from 'ionicons/icons'
   import {
     downloadJSON,
     sanitiseLabel,
     stringSlim,
+    stuff,
     uploadJSON,
     writeToClipboardAndToast,
   } from './utils'
   import { popoverController } from 'ionic-svelte'
-  import Counter from './Counter.svelte'
+
   import { writable } from 'svelte/store'
 
   import { buildTime } from '../buildTime'
+  import MagicImport from './Magicimport.svelte'
 
   //
   // All init routines
@@ -92,8 +98,10 @@
   let selectedContext: PromptContext | undefined = undefined
   let showToast = writable<boolean>(false)
   let toastMessage = writable<string>('')
+  const showProjectPopover = writable<boolean>(false)
+  const showMagicImport = writable<boolean>(false)
+  let clipboardData = writable<string>('asdasdasd 222')
 
-  //
   // methods
   //
   const addPrompt = () => {
@@ -149,6 +157,13 @@
         setToFirstPrompt()
       }
     }
+  }
+
+  const copyToClipboard = async (text: string | undefined) => {
+    if (!text) {
+      return
+    }
+    await writeToClipboardAndToast(text)
   }
 
   //
@@ -220,8 +235,23 @@
       const sanitizedLabel = sanitiseLabel(label)
       if (sanitizedLabel.length > 0) {
         updateContextLabelInProject(context, sanitizedLabel)
+        if (selectedPrompt) selectedPrompt = { ...selectedPrompt }
       }
     }
+  }
+
+  const openMagicWand = async () => {
+    const { type, value } = await Clipboard.read()
+
+    if (type === 'text/plain') {
+      console.log(`Got ${type} from clipboard: ${value}`)
+      clipboardData.set(stuff)
+    } else {
+      alert('Only text/plain type is accepted, received ' + type)
+    }
+
+    console.log('Magic wand clicked')
+    showMagicImport.set(true)
   }
 
   //
@@ -290,17 +320,19 @@
       $projectInfo.title.includes(preamble) ? '' : $projectInfo.title,
     )
 
-    if (title && (title === 'rrefresh' || title === 'Rrefresh')) {
-      window.location.reload()
-      return
-    }
-
     if (title && title.length > 2) {
-      setProjectTitle(title)
+      if (title.startsWith('+')) {
+        copyProject($projectInfo.id, title.substring(1).trim())
+        setToFirstPrompt()
+        selectedContext = undefined
+      } else {
+        setProjectTitle(title)
+      }
     }
 
     if (title === '' && !$projectInfo.title.includes(preamble)) {
       startNewProject()
+      selectedContext = undefined
       setToFirstPrompt()
     }
   }
@@ -308,7 +340,6 @@
   //
   // Project - Popover stuff
   //
-  const showProjectPopover = writable<boolean>(false)
   const selectProject = async (project: Project) => {
     selectProjectFromLibrary(project.projectInfo.id)
     selectedContext = undefined
@@ -331,9 +362,28 @@
       }
     }
   }
+
+  //
+  // Misc stuff
+  //
+  const askToRefreshApp = () => {
+    if (confirm('Are you sure you want to refresh to update?')) {
+      location.reload()
+    }
+  }
 </script>
 
+<ion-modal
+  is-open={$showMagicImport}
+  on:didDismiss={() => {
+    showMagicImport.set(false)
+  }}
+>
+  <MagicImport clipboard={clipboardData}></MagicImport>
+</ion-modal>
+
 <ion-popover
+  class="full-width-popover"
   is-open={$showProjectPopover}
   on:didDismiss={() => {
     showProjectPopover.set(false)
@@ -492,6 +542,14 @@
           >
             <ion-icon icon={trash}></ion-icon>
           </div>
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <div
+            class="action-button"
+            on:click={() => copyToClipboard(selectedPrompt?.prompt)}
+          >
+            <ion-icon icon={copyOutline}></ion-icon>
+          </div>
         </div>
       </ion-card-content>
     </ion-card>
@@ -542,6 +600,11 @@
             </div>
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="action-button" on:click={openMagicWand}>
+              <ion-icon icon={colorWandOutline}></ion-icon>
+            </div>
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div
               class="action-button"
               on:click={() => deleteContext(selectedContext)}
@@ -582,6 +645,11 @@
             </div>
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <div class="action-button" on:click={openMagicWand}>
+              <ion-icon icon={colorWandOutline}></ion-icon>
+            </div>
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
             <div class="action-button" on:click={uploadContexts}>
               <ion-icon
                 style="transform: scaleY(-1);"
@@ -602,7 +670,9 @@
   {/if}
 </ion-content>
 
-<div class="footer">{buildTime}</div>
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<div class="footer" on:click={askToRefreshApp}>{buildTime}</div>
 
 <style>
   .footer {

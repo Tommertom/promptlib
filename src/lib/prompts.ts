@@ -178,17 +178,42 @@ export const updateContextLabelInProject = (
   context: PromptContext,
   newLabel: string,
 ) => {
+  // let's update the label first
   const currentContexts = get(contexts)
   const index = currentContexts.findIndex((c) => c.label === context.label)
+  const oldLabel = context.label
 
-  // Check if the sanitizedLabel is already being used
+  // Check if the sanitizedLabel new is already being used. If not, change the label
   const isLabelUsed = currentContexts.some((c) => c.label === newLabel)
   if (isLabelUsed) {
     return
   }
-
   currentContexts[index].label = newLabel
+
+  // then we are going to update all the prompts that use this context
+  const currentPrompts = get(prompts)
+  for (const prompt of currentPrompts) {
+    while (prompt.prompt.includes('[' + oldLabel + ']')) {
+      prompt.prompt = prompt.prompt.replace(
+        '[' + oldLabel + ']',
+        '[' + newLabel + ']',
+      )
+    }
+  }
+  prompts.set(currentPrompts)
+
+  // and we are going to replace all content of all contexts that contain the old label
+  for (const context of currentContexts) {
+    while (context.content.includes('[' + oldLabel + ']')) {
+      context.content = context.content.replace(
+        '[' + oldLabel + ']',
+        '[' + newLabel + ']',
+      )
+    }
+  }
   contexts.set(currentContexts)
+
+  // save stuff and we are done
   saveAllProjectData()
 }
 
@@ -243,6 +268,33 @@ export const startNewProject = async () => {
   projectInfo.set({ title: 'Click to change project name', id: Date.now() })
   prompts.set([])
   contexts.set([])
+
+  // save the new project
+  saveAllProjectData()
+}
+
+export const copyProject = async (projectId: number, newTitle: string) => {
+  console.log('copyProject', projectId, newTitle)
+  // ensure a save of the current project
+  saveAllProjectData()
+
+  // load the project from the library
+  const project = get(projects_available).find(
+    (p) => p.projectInfo.id === projectId,
+  )
+  console.log('Found project to copy', project, get(projects_available))
+
+  if (project) {
+    const newProject = {
+      projectInfo: { title: newTitle, id: Date.now() },
+      prompts: project.prompts,
+      contexts: project.contexts,
+    }
+    projects_available.update((projects) => [...projects, newProject])
+    projectInfo.set(newProject.projectInfo)
+    prompts.set(newProject.prompts)
+    contexts.set(newProject.contexts)
+  }
 
   // save the new project
   saveAllProjectData()

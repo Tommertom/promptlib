@@ -23,6 +23,7 @@
   import 'ionic-svelte/components/ion-label'
   import 'ionic-svelte/components/ion-list'
   import 'ionic-svelte/components/ion-list-header'
+  import 'ionic-svelte/components/ion-modal'
   import 'ionic-svelte/components/ion-popover'
   import 'ionic-svelte/components/ion-ripple-effect'
 
@@ -31,6 +32,8 @@
   import 'ionic-svelte/components/ion-title'
   import 'ionic-svelte/components/ion-toast'
   import 'ionic-svelte/components/ion-toolbar'
+
+  /// import 'ionic-svelte/components/all'
 
   /* Theme variables */
   import './theme/variables.css'

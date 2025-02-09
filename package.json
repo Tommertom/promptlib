@@ -29,6 +29,7 @@
     "ionic-svelte": "^0.5.85",
     "ionicons": "^7.4.0",
     "localforage": "^1.10.0",
+    "uuid": "^11.0.5",
     "workbox-window": "^7.3.0"
   }
 }
