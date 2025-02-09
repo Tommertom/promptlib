@@ -33,7 +33,7 @@
   import 'ionic-svelte/components/ion-toast'
   import 'ionic-svelte/components/ion-toolbar'
 
-  /// import 'ionic-svelte/components/all'
+  import 'ionic-svelte/components/all'
 
   /* Theme variables */
   import './theme/variables.css'

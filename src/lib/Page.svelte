@@ -46,7 +46,6 @@
     downloadJSON,
     sanitiseLabel,
     stringSlim,
-    stuff,
     uploadJSON,
     writeToClipboardAndToast,
   } from './utils'
@@ -107,8 +106,6 @@
   const addPrompt = () => {
     const title = prompt('Enter the title of the prompt')
     const promptText = ''
-    console.log(title, promptText)
-
     if (!title) {
       return
     }
@@ -174,6 +171,7 @@
     const sanitizedLabel = sanitiseLabel(label)
     if (sanitizedLabel.length > 0) {
       selectedContext = addContextToLibrary({
+        id: '',
         label: sanitizedLabel,
         content: '',
       })
@@ -242,15 +240,8 @@
 
   const openMagicWand = async () => {
     const { type, value } = await Clipboard.read()
-
-    if (type === 'text/plain') {
-      console.log(`Got ${type} from clipboard: ${value}`)
-      clipboardData.set(stuff)
-    } else {
-      alert('Only text/plain type is accepted, received ' + type)
-    }
-
-    console.log('Magic wand clicked')
+    clipboardData.set('')
+    clipboardData.set(value)
     showMagicImport.set(true)
   }
 
@@ -374,6 +365,7 @@
 </script>
 
 <ion-modal
+  class="modal-fullscreen"
   is-open={$showMagicImport}
   on:didDismiss={() => {
     showMagicImport.set(false)
@@ -398,7 +390,9 @@
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <ion-item
         on:click={() => {
-          selectProject(project)
+          try {
+            selectProject(project)
+          } catch (e) {}
         }}
       >
         <ion-label>

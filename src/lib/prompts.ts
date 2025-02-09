@@ -1,7 +1,9 @@
 import localforage from 'localforage'
 import { derived, get, readable, readonly, writable } from 'svelte/store'
+import { v4 as uuidv4 } from 'uuid'
 
 export interface PromptContext {
+  id: string
   label: string
   content: string
 }
@@ -14,7 +16,7 @@ export interface Prompt {
 
 export interface ProjectInfo {
   title: string
-  id: number
+  id: string
 }
 
 export interface Project {
@@ -25,8 +27,9 @@ export interface Project {
 
 export const prompts = writable<Prompt[]>([])
 export const contexts = writable<PromptContext[]>([])
-export const projectInfo = writable<ProjectInfo>({ title: '', id: Date.now() })
+export const projectInfo = writable<ProjectInfo>({ title: '', id: uuidv4() })
 export const projects_available = writable<Project[]>([])
+export const selected_project = writable<string>('')
 
 export const loadContextsAndPrompts = async () => {
   // load all prompts from indexedDB using localforage
@@ -57,7 +60,7 @@ export const loadContextsAndPrompts = async () => {
 
   // if there is no project in indexedDB, set the project store to a default project
   if (!projectFromIndexedDB) {
-    projectInfo.set({ title: 'Click to change project name', id: Date.now() })
+    projectInfo.set({ title: 'Click to change project name', id: uuidv4() })
   } else {
     projectInfo.set(projectFromIndexedDB)
   }
@@ -148,6 +151,7 @@ export const setContextsInLibrary = async (newContexts: PromptContext[]) => {
 }
 
 export const addContextToLibrary = (newContext: PromptContext) => {
+  newContext.id = uuidv4()
   const currentContexts = get(contexts)
   const newContexts = [...currentContexts, newContext]
   contexts.set(newContexts)
@@ -155,10 +159,10 @@ export const addContextToLibrary = (newContext: PromptContext) => {
   return newContext
 }
 
-export const removeContextFromLibrary = async (contextLabel: string) => {
+export const removeContextFromLibrary = async (contextId: string) => {
   const currentContexts = get(contexts)
   const newContexts = currentContexts.filter(
-    (context) => context.label !== contextLabel,
+    (context) => context.id !== contextId,
   )
   contexts.set(newContexts)
   saveAllProjectData()
@@ -167,7 +171,7 @@ export const removeContextFromLibrary = async (contextLabel: string) => {
 export const updateContextInLibrary = async (updatedContext: PromptContext) => {
   const currentContexts = get(contexts)
   const index = currentContexts.findIndex(
-    (context) => context.label === updatedContext.label,
+    (context) => context.id === updatedContext.id,
   )
   currentContexts[index] = updatedContext
   contexts.set(currentContexts)
@@ -180,7 +184,7 @@ export const updateContextLabelInProject = (
 ) => {
   // let's update the label first
   const currentContexts = get(contexts)
-  const index = currentContexts.findIndex((c) => c.label === context.label)
+  const index = currentContexts.findIndex((c) => c.id === context.id)
   const oldLabel = context.label
 
   // Check if the sanitizedLabel new is already being used. If not, change the label
@@ -265,7 +269,7 @@ export const startNewProject = async () => {
   saveAllProjectData()
 
   // set the project to a new project
-  projectInfo.set({ title: 'Click to change project name', id: Date.now() })
+  projectInfo.set({ title: 'Click to change project name', id: uuidv4() })
   prompts.set([])
   contexts.set([])
 
@@ -273,7 +277,7 @@ export const startNewProject = async () => {
   saveAllProjectData()
 }
 
-export const copyProject = async (projectId: number, newTitle: string) => {
+export const copyProject = async (projectId: string, newTitle: string) => {
   console.log('copyProject', projectId, newTitle)
   // ensure a save of the current project
   saveAllProjectData()
@@ -286,7 +290,7 @@ export const copyProject = async (projectId: number, newTitle: string) => {
 
   if (project) {
     const newProject = {
-      projectInfo: { title: newTitle, id: Date.now() },
+      projectInfo: { title: newTitle, id: uuidv4() },
       prompts: project.prompts,
       contexts: project.contexts,
     }
@@ -300,7 +304,7 @@ export const copyProject = async (projectId: number, newTitle: string) => {
   saveAllProjectData()
 }
 
-export const selectProjectFromLibrary = async (projectId: number) => {
+export const selectProjectFromLibrary = async (projectId: string) => {
   console.log('selectProjectFromLibrary', projectId)
   // ensure a save of the current project
   saveAllProjectData()
@@ -315,13 +319,14 @@ export const selectProjectFromLibrary = async (projectId: number) => {
     projectInfo.set(project.projectInfo)
     prompts.set(project.prompts)
     contexts.set(project.contexts)
+    selected_project.set(projectId)
   }
 
   // save the new project
   saveAllProjectData()
 }
 
-export const deleteProjectFromLibrary = async (projectId: number) => {
+export const deleteProjectFromLibrary = async (projectId: string) => {
   const currentProjects = get(projects_available)
   const newProjects = currentProjects.filter(
     (project) => project.projectInfo.id !== projectId,

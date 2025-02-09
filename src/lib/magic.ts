@@ -1,15 +1,10 @@
 import { v4 as uuidv4 } from 'uuid'
+import type { PromptContext } from './prompts'
 
-export interface Section {
-  id: string
-  title: string
-  content: string
-}
-
-export function parseMarkdownToSections(markdown: string): Section[] {
+export function parseMarkdownToSections(markdown: string): PromptContext[] {
   const lines = markdown.split('\n')
-  const sections: Section[] = []
-  let currentSection: Section | null = null
+  const sections: PromptContext[] = []
+  let currentSection: PromptContext | null = null
 
   lines.forEach((line) => {
     const headerMatch = line.match(/^(#{1,3})\s+(.*)$/)
@@ -19,7 +14,7 @@ export function parseMarkdownToSections(markdown: string): Section[] {
       }
       currentSection = {
         id: uuidv4(),
-        title: headerMatch[2].trim(),
+        label: line.replace(/^#+\s*/, '').trim(),
         content: '',
       }
     } else if (currentSection && line.trim()) {
@@ -30,6 +25,5 @@ export function parseMarkdownToSections(markdown: string): Section[] {
   if (currentSection) {
     sections.push(currentSection)
   }
-
   return sections
 }

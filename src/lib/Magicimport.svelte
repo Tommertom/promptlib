@@ -19,12 +19,14 @@
   import { onMount } from 'svelte'
   import { writable, type Writable, derived } from 'svelte/store'
   import { Clipboard } from '@capacitor/clipboard'
-  import { parseMarkdownToSections, type Section } from './magic'
-  import { sanitiseLabel, showToast, stringSlim } from './utils'
+  import { parseMarkdownToSections } from './magic' // Updated type
+  import { sanitiseLabel, showToast, stringSlim, stuff } from './utils'
+  import { addContextToLibrary, type PromptContext } from './prompts'
 
   export let clipboard: Writable<string>
   let rawClipboardData: string = ''
-  let foundParts: Writable<Section[]> = writable([])
+  let dataToParse: string = ''
+  let foundParts: Writable<PromptContext[]> = writable([]) // Updated type
   let checkedItems = writable<{ [key: string]: boolean }>({})
 
   const selectedCount = derived(checkedItems, ($checkedItems) => {
@@ -36,12 +38,13 @@
   })
 
   $: {
-    rawClipboardData = $clipboard.trim()
+    rawClipboardData = $clipboard.trim() // stuff //
+    dataToParse = rawClipboardData
     checkForSections()
   }
 
   const checkForSections = () => {
-    const sections = parseMarkdownToSections(rawClipboardData)
+    const sections = parseMarkdownToSections(dataToParse)
     foundParts.set(sections)
     const initialCheckedItems: { [key: string]: boolean } = {}
     sections.forEach((section) => {
@@ -49,12 +52,10 @@
         initialCheckedItems[section.id] = true
       } else initialCheckedItems[section.id] = false
     })
-    console.log('initialCheckedItems', initialCheckedItems)
     checkedItems.set(initialCheckedItems)
   }
 
   const closeModal = () => {
-    console.log('closeModal')
     modalController.dismiss()
   }
 
@@ -66,14 +67,24 @@
         `Do you really want to import the ${selectedItemsCount} selected items?`,
       )
     ) {
-      console.log('saveFoundContexts')
+      // Iterate through all selected items and print the content to the console
+      for (const key in $checkedItems) {
+        if ($checkedItems[key]) {
+          const context: PromptContext | undefined = $foundParts.find(
+            (part) => part.id === key,
+          )
+          if (context) {
+            addContextToLibrary(context)
+          }
+        }
+      }
+
       closeModal()
     }
   }
 
   const handleTextareaChange = (event: CustomEvent) => {
-    rawClipboardData = event.detail.value
-
+    dataToParse = event.detail.value
     checkForSections()
   }
 
@@ -82,8 +93,6 @@
       items[id] = !items[id]
       return items
     })
-
-    console.log('checkedItems', $checkedItems)
   }
 </script>
 
@@ -114,12 +123,12 @@
 <ion-content>
   <ion-card>
     <ion-card-content>
-      <ion-textarea
-        value={rawClipboardData}
-        placeholder="Enter some text here"
-        rows="20"
-        on:ionInput={handleTextareaChange}
-      ></ion-textarea>
+      <div style="text-align: left; font-size: 70%;padding-bottom: 10px;">
+        Past LLM output in the textarea below and the magic wand will find the
+        sections for you. Unselect the sections you don't want to import via the
+        buttons below. If there is already text found on the clipboard, it will
+        be automatically pasted here.
+      </div>
       {#each $foundParts as part}
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -131,7 +140,28 @@
             class="chip-checkbox"
             icon={$checkedItems[part.id] ? checkbox : stop}
           ></ion-icon>
-          {sanitiseLabel(part.title)}
+          {sanitiseLabel(part.label)}
+        </ion-chip>
+      {/each}
+      <ion-textarea
+        value={rawClipboardData}
+        placeholder="Paste LLM output here"
+        rows="20"
+        on:ionInput={handleTextareaChange}
+      ></ion-textarea>
+
+      {#each $foundParts as part}
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <ion-chip
+          on:click={() => toggleChecked(part.id)}
+          class="ion-align-items-center ion-text-center"
+        >
+          <ion-icon
+            class="chip-checkbox"
+            icon={$checkedItems[part.id] ? checkbox : stop}
+          ></ion-icon>
+          {sanitiseLabel(part.label)}
         </ion-chip>
       {/each}
     </ion-card-content>
@@ -181,6 +211,7 @@
     padding-right: 10px;
     font-size: 90%;
     vertical-align: top;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
+    margin-top: 5px;
   }
 </style>
