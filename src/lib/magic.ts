@@ -14,7 +14,10 @@ export function parseMarkdownToSections(markdown: string): PromptContext[] {
       }
       currentSection = {
         id: uuidv4(),
-        label: line.replace(/^#+\s*/, '').trim(),
+        label: line
+          .replace(/^#+\s*/, '')
+          .replace(/\*\*/g, '')
+          .trim(),
         content: '',
       }
     } else if (currentSection && line.trim()) {
