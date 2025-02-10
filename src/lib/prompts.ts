@@ -1,6 +1,7 @@
 import localforage from 'localforage'
 import { derived, get, readable, readonly, writable } from 'svelte/store'
 import { v4 as uuidv4 } from 'uuid'
+import { sanitiseLabel } from './utils'
 
 export interface PromptContext {
   id: string
@@ -152,6 +153,7 @@ export const setContextsInLibrary = async (newContexts: PromptContext[]) => {
 
 export const addContextToLibrary = (newContext: PromptContext) => {
   newContext.id = uuidv4()
+  newContext.label = sanitiseLabel(newContext.label)
   const currentContexts = get(contexts)
   const newContexts = [...currentContexts, newContext]
   contexts.set(newContexts)

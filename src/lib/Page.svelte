@@ -220,7 +220,7 @@
           `Are you sure you want to delete this context? (${context.label})`,
         )
       ) {
-        removeContextFromLibrary(context.label)
+        removeContextFromLibrary(context.id)
         selectedContext = undefined
       }
     }
